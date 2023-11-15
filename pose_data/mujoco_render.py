@@ -470,7 +470,8 @@ def render_images(stl_file, dest_dir):
     # random.seed(i**2)
     x_pos = 0.5  # random.uniform(0,1)
     y_pos = 0  # random.uniform(-1,1)
-    angle_pos = random.uniform(0, 2 * np.pi)
+    angle_pos = random.uniform(0, np.pi)
+    print(angle_pos)
     model = pusher(
         mesh_file=stl_file,
         mesh_file_path=stl_file,
@@ -480,11 +481,12 @@ def render_images(stl_file, dest_dir):
         table_size="1.0 1.6 1")
     model.save(os.path.join(gym.__path__[0][:-4],
                             "gym/envs/mujoco/assets/pusher.xml"))
-    # print(GYM_PATH + '/gym/envs/mujoco/assets/pusher.xml')
+    # print(os.path.join(gym.__path__[0][:-4],
+    #                         "gym/envs/mujoco/assets/pusher.xml"))
     # copy2(args.obj_filepath, GYM_PATH+'/gym/envs/mujoco/assets')
 
-    env = gym.envs.make("Pusher-v2")
-
+    env = gym.envs.make("Pusher-v2") #, render_mode="rgb_array")
+    #env.reset()
     screen = env.render(mode="rgb_array")
     # res = cv2.resize(screen, dsize=(128,128), interpolation=cv2.INTER_AREA)
     res = screen
@@ -494,6 +496,7 @@ def render_images(stl_file, dest_dir):
     ax.imshow(res)
     ax.set_position([0, 0, 1, 1])
     plt.savefig(des_path + "/" + str(i) + ".png")
+    #plt.show()
     plt.close()
 
     ylabel = [i, x_pos, y_pos, angle_pos]
@@ -510,8 +513,15 @@ def main(_):
 
   # Skip these because they are symmetric
   classes_to_skip = ["bottle", "train"]
+  obj_class_list_raw = tf.io.gfile.listdir(CAD_dir)
+  obj_class_list_raw.sort()
+  obj_class_list = []
+  for obj_class in obj_class_list_raw:
+    if not obj_class[-3:] == 'mat':
+      obj_class_list.append(obj_class)
+  print(obj_class_list)
 
-  for obj_class in tf.io.gfile.listdir(CAD_dir):
+  for obj_class in obj_class_list:
     if obj_class in classes_to_skip:
       continue
     for obj in tf.io.gfile.listdir(os.path.join(CAD_dir, obj_class)):
@@ -519,8 +529,9 @@ def main(_):
         print("Rendering %s from object class %s" % (obj, obj_class))
         try:
           render_images(os.path.join(CAD_dir, obj_class, obj), FLAGS.data_dir)
-        except Exception:  # pylint: disable=broad-except
+        except Exception as error:  # pylint: disable=broad-except
           print("Failed to render %s from object class %s" % (obj, obj_class))
+          print(error)
 
 if __name__ == "__main__":
   app.run(main)
